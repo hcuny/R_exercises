@@ -1,12 +1,3 @@
-######### HOMEWORK 1, STOR 665: COMPUTING PART, DUE FEB 8, 2016 #########
-
-######### Student Name:     Cunyuan Huang      730041361           #########
-
-# INSTRUCTION: Edit this R file by adding your solution to the end of each 
-# question. Your submitted file should run smoothly in R and provide all 
-# required results. You are allowed to work with other students but the 
-# homework should be in your own words. Identical solutions will receive a 0 
-# in grade and will be investigated.
 
 # This homework is an exercise in Least Squares computation.  We will
 # build up R code that 1) computes a Q-R decomposition of a matrix X,
