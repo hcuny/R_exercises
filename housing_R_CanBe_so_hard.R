@@ -42,6 +42,7 @@ catNWayAvgCV <- function(data, varList, y, pred0, filter, k, f, g=1, lambda=NULL
       oof <- c(oof, tmp1$adj_avg)
     }
   }
+      
   oofInd <- data.frame(ind, oof)
   oofInd <- oofInd[order(oofInd$ind),]
   sub1 <- data.table(v1=data[,varList,with=FALSE], y=data[,y,with=FALSE], pred0=data[,pred0,with=FALSE], filt=filter)
@@ -74,19 +75,25 @@ vars <- setdiff(names(t1), c("photos", "features"))
 t1<- map_at(t1, vars, unlist) %>% as.data.table(.)
 t1[,":="(filter=0)]
 
+    
+    
 # create 5 fold CV
 set.seed(321)
 cvFoldsList <- createFolds(t1$interest_level, k=5, list=TRUE, returnTrain=FALSE)
 
+    
 # Convert classes to integers for xgboost
 class <- data.table(interest_level=c("low", "medium", "high"), class=c(0,1,2))
 t1 <- merge(t1, class, by="interest_level", all.x=TRUE, sort=F)
 
+    
 # Load test set
 print("loading test set")
 s1 <- fromJSON("../input/test.json")
+    
 s1_feats <- data.table(listing_id=rep(unlist(s1$listing_id), lapply(s1$features, length)), features=unlist(s1$features))
 s1_photos <- data.table(listing_id=rep(unlist(s1$listing_id), lapply(s1$photos, length)), features=unlist(s1$photos))
+    
 vars <- setdiff(names(s1), c("photos", "features"))
 s1<- map_at(s1, vars, unlist) %>% as.data.table(.)
 s1[,":="(interest_level="-1",
@@ -107,6 +114,8 @@ ts1[,":="(created=as.POSIXct(created)
           ,high=as.integer(interest_level=="high")
           ,display_address=trimws(tolower(display_address))
           ,street_address=trimws(tolower(street_address)))]
+      
+      
 ts1[, ":="(pred0_low=sum(interest_level=="low")/sum(filter==0),
            pred0_medium=sum(interest_level=="medium")/sum(filter==0),
            pred0_high=sum(interest_level=="high")/sum(filter==0))]
@@ -114,8 +123,10 @@ ts1[, ":="(pred0_low=sum(interest_level=="low")/sum(filter==0),
 # merge Feature column
 ts1_feats[,features:=gsub(" ", "_", paste0("feature_",trimws(char_tolower(features))))]
 feats_summ <- ts1_feats[,.N, by=features]
+      
 ts1_feats_cast <- dcast.data.table(ts1_feats[!features %in% feats_summ[N<10, features]], listing_id ~ features, fun.aggregate = function(x) as.integer(length(x) > 0), value.var = "features")
 ts1 <- merge(ts1, ts1_feats_cast, by="listing_id", all.x=TRUE, sort=FALSE)
+  
 rm(ts1_feats_cast);gc()
 
 # Photo counts
@@ -137,6 +148,7 @@ highCard <- c(
   "building_id",
   "manager_id"
   )
+                                   
 for (col in 1:length(highCard)){
   # ts1[,paste0(highCard[col],"_mean_low"):=catNWayAvgCV(ts1, varList=c("dummy",highCard[col]), y="low", pred0="pred0_low", filter=ts1[["filter"]]==0, k=10, f=2, r_k=0.02, cv=cvFoldsList)]
   ts1[,paste0(highCard[col],"_mean_med"):=catNWayAvgCV(ts1, varList=c("dummy",highCard[col]), y="medium", pred0="pred0_medium", filter=ts1$filter==0, k=5, f=1, r_k=0.01, cv=cvFoldsList)]
@@ -165,6 +177,7 @@ print("fill in missing values")
 for (col in 1:ncol(ts1)){
   set(ts1, i=which(is.na(ts1[[col]])), j=col, value=-1)
 }
+                                   
 
 print("get variable names")
 varnames <- setdiff(colnames(ts1), c("photos","pred0_high", "pred0_low","pred0_medium","description", "features","interest_level","dummy","filter", "created", "class", "low","medium","high","street"))
@@ -180,39 +193,3 @@ print("converting data into xgb format")
 dtrain <- xgb.DMatrix(data=t1_sparse, label=labels)
 dtest <- xgb.DMatrix(data=s1_sparse)
 
-param <- list(booster="gbtree",
-              objective="multi:softprob",
-              eval_metric="mlogloss",
-              nthread=13,
-              num_class=3,
-              eta = .02,
-              gamma = 1,
-              max_depth = 4,
-              min_child_weight = 1,
-              subsample = .7,
-              colsample_bytree = .5
-)
-
-#set.seed(201609)
-#(tme <- Sys.time())
-#xgb2cv <- xgb.cv(data = dtrain,
-#                 params = param,
-#                 nrounds = 50000,
-#                 maximize=FALSE,
-#                 prediction = TRUE,
-#                 folds = cvFoldsList,
-#                 # nfold = 5,
-#                 print_every_n = 50,
-#                 early_stopping_round=300)
-#Sys.time() - tme
-#watch <- list(dtrain=dtrain)
-#xgb2 <- xgb.train(data = dtrain,
-#                  params = param,
-                 # watchlist=watch,
-                  # nrounds = xgb2cv$best_ntreelimit
-#                  nrounds = 2710
-#)
-
-#sPreds <- as.data.table(t(matrix(predict(xgb2, dtest), nrow=3, ncol=nrow(dtest))))
-#colnames(sPreds) <- class$interest_level
-#fwrite(data.table(listing_id=listing_id_test, sPreds[,list(high,medium,low)]), "submission.csv")
