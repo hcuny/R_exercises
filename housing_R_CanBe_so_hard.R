@@ -1,10 +1,5 @@
-# This R environment comes with all of CRAN preinstalled, as well as many other helpful packages
-# The environment is defined by the kaggle/rstats docker image: https://github.com/kaggle/docker-rstats
-# For example, here's several helpful packages to load in 
-# Load packages and data
 packages <- c("jsonlite", "dplyr", "purrr")
 purrr::walk(packages, library, character.only = TRUE, warn.conflicts = FALSE)
-
 library(data.table)
 library(xgboost)
 library(caret)
