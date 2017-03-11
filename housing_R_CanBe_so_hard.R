@@ -1,14 +1,7 @@
 packages <- c("jsonlite", "dplyr", "purrr")
 purrr::walk(packages, library, character.only = TRUE, warn.conflicts = FALSE)
-library(data.table)
-library(xgboost)
-library(caret)
-library(stringr)
-library(quanteda)
-library(lubridate)
-library(stringr)
-library(Hmisc)
-library(Matrix)
+library(data.table) library(xgboost) library(caret) library(stringr) library(quanteda) library(lubridate)
+library(stringr) library(Hmisc) library(Matrix)
 
 catNWayAvgCV <- function(data, varList, y, pred0, filter, k, f, g=1, lambda=NULL, r_k, cv=NULL){
   # It is probably best to sort your dataset first by filter and then by ID (or index)
