@@ -49,7 +49,6 @@ catNWayAvgCV <- function(data, varList, y, pred0, filter, k, f, g=1, lambda=NULL
   return(c(oofInd$oof, tmp1$adj_avg))
 }
 
-
 # Load training set
 print("loading training set")
 t1 <- fromJSON("../input/train.json")
@@ -69,11 +68,9 @@ t1[,":="(filter=0)]
 set.seed(321)
 cvFoldsList <- createFolds(t1$interest_level, k=5, list=TRUE, returnTrain=FALSE)
 
-    
 # Convert classes to integers for xgboost
 class <- data.table(interest_level=c("low", "medium", "high"), class=c(0,1,2))
 t1 <- merge(t1, class, by="interest_level", all.x=TRUE, sort=F)
-
     
 # Load test set
 print("loading test set")
